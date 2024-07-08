@@ -17,14 +17,7 @@ abstract class Account {
         transaction_history.add(new Transaction(new Date(), "Deposit", amount));
     }
 
-    public void withdraw(double amount) {
-        if (amount <= balance) {
-            balance -= amount;
-            transaction_history.add(new Transaction(new Date(), "Withdrawal", amount));
-        } else {
-            System.out.println("Insufficient balance.");
-        }
-    }
+    public abstract void withdraw(double amount) throws InsufficientBalanceException, MaxWithdrawalException;
 
     public double getBalance() {
         return balance;
@@ -41,9 +34,19 @@ abstract class Account {
 
 class SavingsAccount extends Account {
     private final double interest_rate = 0.05;
-
+    private static final double MAX_WITHDRAWAL_AMOUNT = 2000.00;
     public SavingsAccount(String name, String accountNumber, double balance) {
         super(name, accountNumber, balance);
+    }
+    public void withdraw(double amount) throws InsufficientBalanceException, MaxWithdrawalException {
+        if (amount > MAX_WITHDRAWAL_AMOUNT) {
+            throw new MaxWithdrawalException("Withdrawal amount exceeds the maximum limit for Savings Account.");
+        }
+        if (amount > balance) {
+            throw new InsufficientBalanceException("Insufficient balance.");
+        }
+        balance -= amount;
+        transaction_history.add(new Transaction(new Date(), "Withdrawal", amount));
     }
 
     public void calculateInterest() {
@@ -63,18 +66,21 @@ class SavingsAccount extends Account {
 
 class CurrentAccount extends Account {
     private final double min_balance = 1000.00;
-
+    private static final double MAX_WITHDRAWAL_AMOUNT = 5000.00;
     public CurrentAccount(String name, String accountNumber, double balance) {
         super(name, accountNumber, balance);
     }
 
 
-    public void withdraw(double amount) {
-        if (balance - amount >= min_balance ) {
-            super.withdraw(amount);
-        } else {
-            System.out.println("Minimum balance requirement not met.");
+    public void withdraw(double amount) throws InsufficientBalanceException, MaxWithdrawalException {
+        if (amount > MAX_WITHDRAWAL_AMOUNT) {
+            throw new MaxWithdrawalException("Withdrawal amount exceeds the maximum limit for Current Account.");
         }
+        if (balance - amount < min_balance) {
+            throw new InsufficientBalanceException("Minimum balance requirement not met.");
+        }
+        balance -= amount;
+        transaction_history.add(new Transaction(new Date(), "Withdrawal", amount));
     }
 
    
@@ -103,26 +109,38 @@ class Transaction {
         return "Date: " + date + ", Type: " + type + ", Amount: " + amount;
     }
 }
+class InsufficientBalanceException extends Exception {
+    public InsufficientBalanceException(String message) {
+        super(message);
+    }
+}
 
+class MaxWithdrawalException extends Exception {
+    public MaxWithdrawalException(String message) {
+        super(message);
+    }
+}
 public class Banking {
     public static void main(String[] args) {
         SavingsAccount savingsAccount = new SavingsAccount("Person1", "12345", 7000.00);
         CurrentAccount currentAccount = new CurrentAccount("Person2", "56890", 8000.00);
 
-       
-        savingsAccount.deposit(5000);
-        savingsAccount.withdraw(100);
-        savingsAccount.calculateInterest();
-        savingsAccount.displayAccountDetails();
-        savingsAccount.printTransactionHistory();
+        try {
+            savingsAccount.deposit(5000);
+            savingsAccount.withdraw(100);
+            savingsAccount.calculateInterest();
+            savingsAccount.displayAccountDetails();
+            savingsAccount.printTransactionHistory();
 
-        System.out.println();
+            System.out.println();
 
-       
-        currentAccount.deposit(1000);
-        currentAccount.withdraw(1500);
-        currentAccount.withdraw(3000); 
-        currentAccount.displayAccountDetails();
-        currentAccount.printTransactionHistory();
+            currentAccount.deposit(1000);
+            currentAccount.withdraw(1500);
+            currentAccount.withdraw(3000); 
+            currentAccount.displayAccountDetails();
+            currentAccount.printTransactionHistory();
+        } catch (InsufficientBalanceException | MaxWithdrawalException e) {
+            System.err.println(e.getMessage());
+        }
     }
 }
