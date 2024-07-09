@@ -1,5 +1,5 @@
 import java.util.*;
-abstract class Account {
+ abstract class Account {
     protected String name;
     protected String accountNumber;
     protected double balance;
@@ -39,14 +39,21 @@ class SavingsAccount extends Account {
         super(name, accountNumber, balance);
     }
     public void withdraw(double amount) throws InsufficientBalanceException, MaxWithdrawalException {
-        if (amount > MAX_WITHDRAWAL_AMOUNT) {
-            throw new MaxWithdrawalException("Withdrawal amount exceeds the maximum limit for Savings Account.");
+        try{
+            if (amount > MAX_WITHDRAWAL_AMOUNT) {
+                throw new MaxWithdrawalException("Withdrawal amount exceeds the maximum limit for Savings Account.");
+            }
+            if (amount > balance) {
+                throw new InsufficientBalanceException("Insufficient balance.");
+            }
+            balance -= amount;
+            transaction_history.add(new Transaction(new Date(), "Withdrawal", amount));
         }
-        if (amount > balance) {
-            throw new InsufficientBalanceException("Insufficient balance.");
+        catch(InsufficientBalanceException |MaxWithdrawalException e )
+        {
+              System.out.println(e.getMessage());
         }
-        balance -= amount;
-        transaction_history.add(new Transaction(new Date(), "Withdrawal", amount));
+       
     }
 
     public void calculateInterest() {
@@ -124,7 +131,6 @@ public class Banking {
     public static void main(String[] args) {
         SavingsAccount savingsAccount = new SavingsAccount("Person1", "12345", 7000.00);
         CurrentAccount currentAccount = new CurrentAccount("Person2", "56890", 8000.00);
-
         try {
             savingsAccount.deposit(5000);
             savingsAccount.withdraw(100);
